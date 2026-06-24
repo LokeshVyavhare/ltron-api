@@ -3,8 +3,8 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'          # triggers on v0.1.0, v0.2.0, etc.
-  workflow_dispatch:  # manual trigger from GitHub UI
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -14,17 +14,21 @@ jobs:
         include:
           # Linux — .deb + .AppImage
           - os: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
+            rust_target: x86_64-unknown-linux-gnu
+            tauri_target: x86_64-unknown-linux-gnu
             bundles: deb,appimage
 
           # macOS — universal .dmg (Intel + Apple Silicon)
+          # rust_target must be a real Rust target; universal-apple-darwin is Tauri-only
           - os: macos-latest
-            target: universal-apple-darwin
+            rust_target: x86_64-apple-darwin
+            tauri_target: universal-apple-darwin
             bundles: dmg
 
           # Windows — .msi installer
           - os: windows-latest
-            target: x86_64-pc-windows-msvc
+            rust_target: x86_64-pc-windows-msvc
+            tauri_target: x86_64-pc-windows-msvc
             bundles: msi
 
     runs-on: ${{ matrix.os }}
@@ -42,9 +46,9 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: ${{ matrix.rust_target }}
 
-      # macOS universal binary needs both arch targets
+      # macOS universal binary needs both arch targets added after toolchain install
       - name: Add macOS arm64 target
         if: matrix.os == 'macos-latest'
         run: rustup target add aarch64-apple-darwin
@@ -84,6 +88,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
+          # projectPath tells the action where package.json (and the tauri CLI) live
+          projectPath: ui
           tagName: ${{ github.ref_name }}
           releaseName: 'Ltron-api ${{ github.ref_name }}'
           releaseBody: |
@@ -95,6 +101,6 @@ jobs:
             - **Windows**: Download `.msi`, run it
 
             > First-time macOS users: if Gatekeeper blocks the app, right-click → Open → Open.
-          releaseDraft: true      # creates a draft — you review before publishing
+          releaseDraft: true
           prerelease: false
-          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+          args: --target ${{ matrix.tauri_target }} --bundles ${{ matrix.bundles }}
