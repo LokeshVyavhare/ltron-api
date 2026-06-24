@@ -19,7 +19,6 @@ jobs:
             bundles: deb,appimage
 
           # macOS — universal .dmg (Intel + Apple Silicon)
-          # rust_target must be a real Rust target; universal-apple-darwin is Tauri-only
           - os: macos-latest
             rust_target: x86_64-apple-darwin
             tauri_target: universal-apple-darwin
@@ -48,7 +47,7 @@ jobs:
         with:
           targets: ${{ matrix.rust_target }}
 
-      # macOS universal binary needs both arch targets added after toolchain install
+      # macOS universal binary needs both arch targets
       - name: Add macOS arm64 target
         if: matrix.os == 'macos-latest'
         run: rustup target add aarch64-apple-darwin
@@ -73,34 +72,29 @@ jobs:
         run: npm run build
         working-directory: ui
 
+      # Run tauri CLI directly via npx — no tauri-action version confusion
       - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
+        run: npx --yes @tauri-apps/cli@^2 build --target ${{ matrix.tauri_target }} --bundles ${{ matrix.bundles }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS signing (optional — leave empty to skip)
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          # Windows signing (optional)
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        with:
-          # projectPath tells the action where package.json (and the tauri CLI) live
-          projectPath: ui
-          tagName: ${{ github.ref_name }}
-          releaseName: 'Ltron-api ${{ github.ref_name }}'
-          releaseBody: |
-            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
 
+      - name: Upload release artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          draft: true
+          name: Ltron-api ${{ github.ref_name }}
+          body: |
             ### Install
             - **Linux**: Download `.deb` (Ubuntu/Debian) or `.AppImage` (any distro)
             - **macOS**: Download `.dmg`, open it, drag Ltron-api to Applications
             - **Windows**: Download `.msi`, run it
 
             > First-time macOS users: if Gatekeeper blocks the app, right-click → Open → Open.
-          releaseDraft: true
-          prerelease: false
-          args: --target ${{ matrix.tauri_target }} --bundles ${{ matrix.bundles }}
+          files: |
+            src-tauri/target/${{ matrix.tauri_target }}/release/bundle/deb/*.deb
+            src-tauri/target/${{ matrix.tauri_target }}/release/bundle/appimage/*.AppImage
+            src-tauri/target/${{ matrix.tauri_target }}/release/bundle/dmg/*.dmg
+            src-tauri/target/${{ matrix.tauri_target }}/release/bundle/msi/*.msi
+          fail_on_unmatched_files: false
