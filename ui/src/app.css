@@ -1,0 +1,131 @@
+/* ── Colour tokens ───────────────────────────────────────────── */
+:root {
+  --bg-1: #1a1a1f;
+  --bg-2: #23232a;
+  --bg-3: #2d2d36;
+  --bg-4: #36363f;
+  --fg-1: #e8e8ec;
+  --fg-2: #a0a0ac;
+  --fg-3: #62626e;
+  --accent: #5e9aff;
+  --accent-hover: #4a85e8;
+  --border: #363640;
+  --ok: #4ade80;
+  --warn: #facc15;
+  --err: #f87171;
+  --mono: ui-monospace, 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* Explicit light mode */
+:root.light {
+  --bg-1: #ffffff;
+  --bg-2: #f5f5f7;
+  --bg-3: #eaeaed;
+  --bg-4: #dedee3;
+  --fg-1: #18181f;
+  --fg-2: #4a4a58;
+  --fg-3: #8a8a9a;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --border: #d4d4da;
+  --ok: #16a34a;
+  --warn: #ca8a04;
+  --err: #dc2626;
+}
+
+/* System: follow OS when .system class is set */
+@media (prefers-color-scheme: light) {
+  :root.system {
+    --bg-1: #ffffff;
+    --bg-2: #f5f5f7;
+    --bg-3: #eaeaed;
+    --bg-4: #dedee3;
+    --fg-1: #18181f;
+    --fg-2: #4a4a58;
+    --fg-3: #8a8a9a;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --border: #d4d4da;
+    --ok: #16a34a;
+    --warn: #ca8a04;
+    --err: #dc2626;
+  }
+}
+
+/* ── Reset ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #app {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg-1);
+  color: var(--fg-1);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+input[type="text"], input[type="password"], textarea {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--fg-1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  outline: none;
+}
+input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
+  border-color: var(--accent);
+}
+
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  color: var(--fg-1);
+  padding: 4px 24px 4px 8px;
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2362626e'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 7px center;
+}
+select:focus { border-color: var(--accent); }
+
+button {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  color: var(--fg-1);
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+}
+button:hover { background: var(--bg-4); border-color: var(--fg-3); }
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+button.danger { color: var(--err); border-color: var(--err); }
+button.danger:hover { background: color-mix(in srgb, var(--err) 12%, var(--bg-3)); }
+
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.mono { font-family: var(--mono); }
+.muted { color: var(--fg-2); }
+.dim { color: var(--fg-3); }

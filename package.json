@@ -1,0 +1,16 @@
+{
+  "name": "ltron-api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "cd ui && npm run dev",
+    "build": "cd ui && npm run build",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.1.0"
+  }
+}

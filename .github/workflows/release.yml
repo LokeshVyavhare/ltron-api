@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'          # triggers on v0.1.0, v0.2.0, etc.
+  workflow_dispatch:  # manual trigger from GitHub UI
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux — .deb + .AppImage
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: deb,appimage
+
+          # macOS — universal .dmg (Intel + Apple Silicon)
+          - os: macos-latest
+            target: universal-apple-darwin
+            bundles: dmg
+
+          # Windows — .msi installer
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: msi
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      # macOS universal binary needs both arch targets
+      - name: Add macOS arm64 target
+        if: matrix.os == 'macos-latest'
+        run: rustup target add aarch64-apple-darwin
+
+      # Linux system dependencies for WebKitGTK
+      - name: Install Linux deps
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libssl-dev
+
+      - name: Install frontend deps
+        run: npm ci
+        working-directory: ui
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: ui
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # macOS signing (optional — leave empty to skip)
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Windows signing (optional)
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Ltron-api ${{ github.ref_name }}'
+          releaseBody: |
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+
+            ### Install
+            - **Linux**: Download `.deb` (Ubuntu/Debian) or `.AppImage` (any distro)
+            - **macOS**: Download `.dmg`, open it, drag Ltrin-api to Applications
+            - **Windows**: Download `.msi`, run it
+
+            > First-time macOS users: if Gatekeeper blocks the app, right-click → Open → Open.
+          releaseDraft: true      # creates a draft — you review before publishing
+          prerelease: false
+          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}

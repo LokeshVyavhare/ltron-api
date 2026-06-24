@@ -1,0 +1,53 @@
+# Rust
+target/
+**/*.rs.bk
+*.pdb
+
+# Cargo.lock is committed at the workspace root (binary project)
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+.svelte-kit/
+*.tsbuildinfo
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/
+src-tauri/WixTools/
+
+# Local app data (in case a dev points the app at an in-repo directory)
+.ltron-dev-data/
+ltron-dev-data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Coverage
+coverage/
+*.lcov
+
+# Build outputs
+*.dmg
+*.deb
+*.AppImage
+*.msi
+*.exe
