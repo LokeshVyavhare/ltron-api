@@ -1,36 +1,104 @@
 # Ltron-api
 
-A lightweight, local-first desktop API client for Linux (with Windows/macOS as secondary targets). Think Postman, minus the Electron bloat, accounts, and cloud sync.
+A lightweight, local-first desktop API client. Compose, send, and save HTTP requests — no accounts, no cloud, no bloat.
 
-## Status
+> Think Postman, minus the Electron overhead and forced sign-in.
 
-**Phase 0 — Design.** No code yet. The architecture and feature set live as a spec-kit document set under [`specs/001-ltron-api/`](specs/001-ltron-api/).
+---
 
-Read in this order:
-1. [`spec.md`](specs/001-ltron-api/spec.md) — what we're building and why (user-facing requirements, success metrics, non-goals)
-2. [`plan.md`](specs/001-ltron-api/plan.md) — how we're building it (Tauri 2 with a thin Rust shell + Svelte 5 frontend, JSON-file storage, architectural decisions)
-3. [`data-model.md`](specs/001-ltron-api/data-model.md) — entities, on-disk layout, JSON shapes
-4. [`research.md`](specs/001-ltron-api/research.md) — decisions with rationale and rejected alternatives
-5. [`tasks.md`](specs/001-ltron-api/tasks.md) — ordered implementation milestones (M0 → M7)
-6. [`contracts/`](specs/001-ltron-api/contracts/) — Tauri IPC primitives and event channels
+## Download
 
-## Non-functional targets
+**[→ Latest release](https://github.com/lokeshvyavhare1805/ltron-api/releases/latest)**
 
-| Metric                      | Target                                      |
-|-----------------------------|---------------------------------------------|
-| Idle RAM                    | ≤ 100 MB RSS                                |
-| Installed footprint         | ≤ 20 MB                                     |
-| Cold start to interactive   | ≤ 500 ms (midrange Linux laptop)            |
-| Send overhead vs curl       | ≤ 15 ms                                     |
-| Open 1000-request workspace | ≤ 1 s                                       |
+| Platform | File | Notes |
+|---|---|---|
+| Linux (Ubuntu/Debian) | `.deb` | Recommended for Ubuntu 22.04+ |
+| Linux (any distro) | `.AppImage` | Self-contained, no install needed |
+| macOS | `.dmg` | Universal binary — Intel + Apple Silicon |
+| Windows | `.msi` | Windows 10/11, WebView2 required |
 
-## Principles
+---
 
-- **Frontend-driven.** The Rust side of Tauri is a thin native shell — it only fires HTTP requests, reads/writes files, and shows OS dialogs. All app logic, models, validation, variable interpolation, and state live in TypeScript / Svelte 5.
-- **Local-only.** No accounts, no cloud, no telemetry. Your data is a folder of JSON files under `$XDG_DATA_HOME/ltron-api/` — inspectable, diff-able, and yours.
-- **Lightweight.** Tauri (system WebView) over Electron, CodeMirror over Monaco, UnoCSS over Tailwind runtime, hand-rolled `{{variable}}` resolver instead of pulling in Handlebars. No SQLite, no ORM.
-- **Backup-friendly.** Export any workspace as a single versioned JSON bundle. Import the same bundle to restore or transplant to another machine.
-- **Postman-compatible where it's cheap.** `{{variable}}` syntax, collection / folder / example concepts. Postman v2.1 import is a stretch goal.
+## Installation
+
+### Linux — .deb (Ubuntu / Debian)
+
+```sh
+sudo dpkg -i Ltron-api_*.deb
+```
+
+Then launch from your application menu or run `ltron-api`.
+
+### Linux — .AppImage (any distro)
+
+```sh
+chmod +x Ltron-api_*.AppImage
+./Ltron-api_*.AppImage
+```
+
+No installation needed. Move it anywhere on your PATH to launch it by name.
+
+### macOS
+
+1. Download the `.dmg`
+2. Open it and drag **Ltron-api** to Applications
+3. First launch: if Gatekeeper blocks it, right-click the app → **Open** → **Open**
+
+### Windows
+
+1. Download the `.msi`
+2. Run it and follow the installer
+3. If Windows SmartScreen warns you, click **More info** → **Run anyway**
+
+> Windows requires [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) — it is pre-installed on Windows 10 (20H2+) and Windows 11.
+
+---
+
+## Features
+
+- **Send HTTP requests** — GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
+- **Organize with collections and folders** — unlimited nesting, like Postman
+- **Environment variables** — global variables always active; switch environments to override per-project
+- **`{{variable}}` syntax** — use variables in URLs, headers, body, anywhere; autocomplete as you type
+- **Multiple body types** — JSON, form data, raw text, binary
+- **Auth support** — Bearer token, Basic auth, API key, and more
+- **Response viewer** — syntax-highlighted JSON/XML, raw, headers, status, latency
+- **Export / Import** — back up everything to a single JSON file; restore on any machine
+- **Dark, Light, and System theme**
+- **100% local** — all data is stored as JSON files under your home directory; no accounts, no telemetry
+
+---
+
+## Where is my data stored?
+
+All data lives locally on your machine:
+
+| OS | Path |
+|---|---|
+| Linux | `~/.local/share/ltron-api/` |
+| macOS | `~/Library/Application Support/ltron-api/` |
+| Windows | `%APPDATA%\ltron-api\` |
+
+You can back it up, diff it with git, or copy it to another machine manually. The **Export** button in the app creates a single portable `.json` bundle.
+
+---
+
+## Keyboard shortcuts
+
+| Shortcut | Action |
+|---|---|
+| `Ctrl+Enter` / `Cmd+Enter` | Send request |
+| `Ctrl+Enter` (while loading) | Cancel request |
+
+---
+
+## Tech stack
+
+Built with [Tauri 2](https://tauri.app) (Rust + system WebView), [Svelte 5](https://svelte.dev), and [Vite](https://vitejs.dev). Installed size is ~7–20 MB depending on platform.
+
+For architecture and development docs see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+---
 
 ## License
 
