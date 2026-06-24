@@ -91,7 +91,7 @@ jobs:
 
             ### Install
             - **Linux**: Download `.deb` (Ubuntu/Debian) or `.AppImage` (any distro)
-            - **macOS**: Download `.dmg`, open it, drag Ltrin-api to Applications
+            - **macOS**: Download `.dmg`, open it, drag Ltron-api to Applications
             - **Windows**: Download `.msi`, run it
 
             > First-time macOS users: if Gatekeeper blocks the app, right-click → Open → Open.
