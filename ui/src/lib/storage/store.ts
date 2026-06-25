@@ -13,6 +13,8 @@ import {
   historyTodayPath,
   foldersDir,
   folderJsonPath,
+  examplesDir,
+  exampleJsonPath,
 } from './paths';
 import {
   readJson,
@@ -28,6 +30,7 @@ import {
   type AppSettings,
   type Collection,
   type Environment,
+  type Example,
   type Folder,
   type Globals,
   type HistoryEntry,
@@ -246,6 +249,31 @@ export async function deleteRequest(
   await fsDelete(await requestJsonPath(workspaceId, collectionId, requestId), false);
 }
 
+// ---------- examples ----------
+
+export async function loadAllExamples(workspaceId: string, collectionId: string): Promise<Example[]> {
+  const dir = await examplesDir(workspaceId, collectionId);
+  if (!(await fsExists(dir))) return [];
+  const entries = await fsList(dir);
+  const ids = entries.filter((e) => !e.is_dir && e.name.endsWith('.json')).map((e) => e.name.replace(/\.json$/, ''));
+  const out: Example[] = [];
+  for (const id of ids) {
+    const ex = await readJson<Example>(await exampleJsonPath(workspaceId, collectionId, id));
+    if (ex) out.push(ex);
+  }
+  out.sort((a, b) => a.created_at - b.created_at);
+  return out;
+}
+
+export async function saveExample(workspaceId: string, example: Example): Promise<void> {
+  await ensureDir(await examplesDir(workspaceId, example.collection_id));
+  await writeJson(await exampleJsonPath(workspaceId, example.collection_id, example.id), example);
+}
+
+export async function deleteExample(workspaceId: string, collectionId: string, exampleId: string): Promise<void> {
+  await fsDelete(await exampleJsonPath(workspaceId, collectionId, exampleId), false);
+}
+
 // ---------- history ----------
 
 export async function appendHistory(entry: HistoryEntry): Promise<void> {
@@ -285,7 +313,10 @@ export async function bootstrapIfEmpty(): Promise<{
 }> {
   const existing = await listWorkspaceIds();
   if (existing.length > 0) {
-    const wsId = existing[0];
+    // Prefer the last active workspace if settings say so
+    const settings = await loadSettings();
+    const preferredId = settings.last_active_workspace_id;
+    const wsId = (preferredId && existing.includes(preferredId)) ? preferredId : existing[0];
     const ws = await loadWorkspace(wsId);
     if (ws) {
       const collIds = await listCollectionIds(wsId);

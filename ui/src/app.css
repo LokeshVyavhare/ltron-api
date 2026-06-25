@@ -1,54 +1,57 @@
-/* ── Colour tokens ───────────────────────────────────────────── */
+/* ── Colour tokens ── Slate theme ───────────────────────────── */
 :root {
-  --bg-1: #1a1a1f;
-  --bg-2: #23232a;
-  --bg-3: #2d2d36;
-  --bg-4: #36363f;
-  --fg-1: #e8e8ec;
-  --fg-2: #a0a0ac;
-  --fg-3: #62626e;
-  --accent: #5e9aff;
-  --accent-hover: #4a85e8;
-  --border: #363640;
-  --ok: #4ade80;
-  --warn: #facc15;
-  --err: #f87171;
-  --mono: ui-monospace, 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  --bg-1: #0d0d10;
+  --bg-2: #16161a;
+  --bg-3: #1e1e24;
+  --bg-4: #28282f;
+  --fg-1: #e8e8f0;
+  --fg-2: #8888a0;
+  --fg-3: #505060;
+  --accent: #818cf8;
+  --accent-hover: #6366f1;
+  --accent-dim: rgba(129, 140, 248, 0.12);
+  --border: #242430;
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --err: #fb7185;
+  --mono: 'Geist Mono', ui-monospace, 'JetBrains Mono', 'Fira Code', Menlo, monospace;
 }
 
 /* Explicit light mode */
 :root.light {
-  --bg-1: #ffffff;
-  --bg-2: #f5f5f7;
-  --bg-3: #eaeaed;
-  --bg-4: #dedee3;
-  --fg-1: #18181f;
-  --fg-2: #4a4a58;
-  --fg-3: #8a8a9a;
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --border: #d4d4da;
-  --ok: #16a34a;
-  --warn: #ca8a04;
-  --err: #dc2626;
+  --bg-1: #f0eff4;
+  --bg-2: #e8e7ee;
+  --bg-3: #dddce5;
+  --bg-4: #d1d0db;
+  --fg-1: #141418;
+  --fg-2: #52525e;
+  --fg-3: #8f8f9e;
+  --accent: #6366f1;
+  --accent-hover: #4f46e5;
+  --accent-dim: rgba(99, 102, 241, 0.1);
+  --border: #cccbd6;
+  --ok: #059669;
+  --warn: #d97706;
+  --err: #e11d48;
 }
 
 /* System: follow OS when .system class is set */
 @media (prefers-color-scheme: light) {
   :root.system {
-    --bg-1: #ffffff;
-    --bg-2: #f5f5f7;
-    --bg-3: #eaeaed;
-    --bg-4: #dedee3;
-    --fg-1: #18181f;
-    --fg-2: #4a4a58;
-    --fg-3: #8a8a9a;
-    --accent: #2563eb;
-    --accent-hover: #1d4ed8;
-    --border: #d4d4da;
-    --ok: #16a34a;
-    --warn: #ca8a04;
-    --err: #dc2626;
+    --bg-1: #f0eff4;
+    --bg-2: #e8e7ee;
+    --bg-3: #dddce5;
+    --bg-4: #d1d0db;
+    --fg-1: #141418;
+    --fg-2: #52525e;
+    --fg-3: #8f8f9e;
+    --accent: #6366f1;
+    --accent-hover: #4f46e5;
+    --accent-dim: rgba(99, 102, 241, 0.1);
+    --border: #cccbd6;
+    --ok: #059669;
+    --warn: #d97706;
+    --err: #e11d48;
   }
 }
 
@@ -63,9 +66,10 @@ html, body, #app {
   overflow: hidden;
   background: var(--bg-1);
   color: var(--fg-1);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 13px;
-  line-height: 1.4;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
 }
 
 button, input, select, textarea {
@@ -96,7 +100,7 @@ select {
   border-radius: 4px;
   outline: none;
   cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2362626e'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238f8f9e'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 7px center;
 }

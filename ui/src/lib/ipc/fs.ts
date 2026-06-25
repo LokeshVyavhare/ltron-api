@@ -11,6 +11,8 @@ export const fsList = (path: string) => invoke<DirEntry[]>('fs_list', { path });
 export const fsDelete = (path: string, recursive = false) =>
   invoke<void>('fs_delete', { path, recursive });
 export const fsMkdir = (path: string) => invoke<void>('fs_mkdir', { path });
+export const fsAppend = (path: string, line: string) =>
+  invoke<void>('fs_append', { path, line });
 export const fsRename = (from: string, to: string) => invoke<void>('fs_rename', { from, to });
 export const fsExists = (path: string) => invoke<boolean>('fs_exists', { path });
 export const fsStat = (path: string) => invoke<FileStat>('fs_stat', { path });

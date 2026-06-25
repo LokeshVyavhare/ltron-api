@@ -78,3 +78,15 @@ export async function folderJsonPath(
 ): Promise<string> {
   return joinPath(await foldersDir(workspaceId, collectionId), `${folderId}.json`);
 }
+
+export async function examplesDir(workspaceId: string, collectionId: string): Promise<string> {
+  return joinPath(await collectionDir(workspaceId, collectionId), 'examples');
+}
+
+export async function exampleJsonPath(
+  workspaceId: string,
+  collectionId: string,
+  exampleId: string,
+): Promise<string> {
+  return joinPath(await examplesDir(workspaceId, collectionId), `${exampleId}.json`);
+}

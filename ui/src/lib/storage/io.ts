@@ -1,4 +1,4 @@
-import { fsRead, fsWrite, fsList, fsExists, fsMkdir, fsDelete } from '../ipc/fs';
+import { fsRead, fsWrite, fsList, fsExists, fsMkdir, fsDelete, fsAppend } from '../ipc/fs';
 
 export async function readJson<T>(path: string): Promise<T | null> {
   try {
@@ -26,14 +26,7 @@ export async function ensureDir(path: string): Promise<void> {
 }
 
 export async function appendJsonl<T>(path: string, value: T): Promise<void> {
-  // Simple append: read existing, append line, write back. Atomic via fsWrite.
-  // For higher throughput we'd add a Rust-side append command; this is fine for v0.
-  let existing = '';
-  if (await fsExists(path)) {
-    existing = await fsRead(path);
-    if (existing && !existing.endsWith('\n')) existing += '\n';
-  }
-  await fsWrite(path, existing + JSON.stringify(value) + '\n');
+  await fsAppend(path, JSON.stringify(value));
 }
 
 export async function readJsonl<T>(path: string): Promise<T[]> {

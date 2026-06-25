@@ -7,8 +7,9 @@
     onimport: () => void;
     onenvironments: () => void;
     onhelp: () => void;
+    onhistory: () => void;
   }
-  let { onexport, onimport, onenvironments, onhelp }: Props = $props();
+  let { onexport, onimport, onenvironments, onhelp, onhistory }: Props = $props();
 
   const themeLabels: Record<string, string> = { dark: 'Dark', light: 'Light', system: 'System' };
   const themeOrder = ['dark', 'light', 'system'] as const;
@@ -32,6 +33,7 @@
   <div class="brand">Ltron-api</div>
   <div class="spacer"></div>
   <button onclick={onenvironments}>Environments</button>
+  <button onclick={onhistory}>History</button>
   <div class="divider"></div>
   <button onclick={onexport}>Export</button>
   <button onclick={onimport}>Import</button>
@@ -56,7 +58,7 @@
   .brand {
     font-weight: 700;
     font-size: 13px;
-    color: var(--fg-1);
+    color: var(--accent);
     letter-spacing: 0.3px;
     margin-right: 8px;
   }

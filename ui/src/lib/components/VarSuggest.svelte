@@ -42,20 +42,35 @@
     const val = el.value ?? '';
     const pos = el.selectionStart ?? val.length;
     const before = val.slice(0, pos);
+
+    // Fast-path: no {{ anywhere before cursor — don't bother matching
+    if (!before.includes('{{')) { show = false; return; }
+
     const match = before.match(/\{\{([a-zA-Z0-9_.]*)$/);
 
     if (match) {
       anchorEl = el;
       prefix = match[1];
       focused = -1;
-      // Position below the input element
-      const rect = el.getBoundingClientRect();
-      menuX = rect.left;
-      menuY = rect.bottom + 4;
+      updateMenuPos(el);
       show = true;
     } else {
       show = false;
     }
+  }
+
+  function updateMenuPos(el: Element) {
+    const rect = el.getBoundingClientRect();
+    menuX = rect.left;
+    menuY = rect.bottom + 4;
+  }
+
+  function onDocScroll() {
+    if (show && anchorEl) updateMenuPos(anchorEl);
+  }
+
+  function onWindowResize() {
+    if (show && anchorEl) updateMenuPos(anchorEl);
   }
 
   function onDocFocusout(e: FocusEvent) {
@@ -110,7 +125,9 @@
   oninput={onDocInput}
   onfocusout={onDocFocusout}
   onkeydown={onDocKeydown}
+  onscroll={onDocScroll}
 />
+<svelte:window onresize={onWindowResize} />
 
 {#if show && filtered.length > 0}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -142,7 +159,7 @@
     background: var(--bg-2);
     border: 1px solid var(--accent);
     border-radius: 7px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.6);
     min-width: 200px;
     max-width: 320px;
     max-height: 220px;
@@ -168,7 +185,7 @@
     font-size: 12px;
     color: var(--fg-1);
   }
-  .item:hover, .item.focused { background: var(--bg-3); }
+  .item:hover, .item.focused { background: var(--accent-dim); }
   .braces { color: var(--accent); }
   .varname { color: var(--fg-1); }
   .source {

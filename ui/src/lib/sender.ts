@@ -66,6 +66,11 @@ function applyAuth(req: Request, ctx: VariableContext, headers: KV[], queryParam
 
 export function buildNativeRequest(req: Request, ctx: VariableContext): NativeRequest {
   const url = resolve(req.url, ctx);
+  try {
+    new URL(url);
+  } catch {
+    throw new Error(`Invalid URL: "${url}"`);
+  }
   const headers = interpolateKV(req.headers, ctx);
   const queryParams = interpolateKV(req.query_params, ctx);
   applyAuth(req, ctx, headers, queryParams);

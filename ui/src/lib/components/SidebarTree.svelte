@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Collection, Folder, Request } from '../models';
+  import type { Collection, Folder, Request, Example } from '../models';
   import { appState } from '../state/app.svelte';
   import { newId, emptyRequest } from '../models';
   import {
@@ -9,12 +9,14 @@
     deleteFolder,
     saveRequest,
     deleteRequest,
+    deleteExample,
   } from '../storage/store';
 
   interface Props {
     onselect: (id: string) => void;
+    onselectexample: (ex: Example) => void;
   }
-  let { onselect }: Props = $props();
+  let { onselect, onselectexample }: Props = $props();
 
   // ── expand / collapse ────────────────────────────────────────
   let expandedColls = $state<Set<string>>(new Set());
@@ -59,7 +61,8 @@
   type CtxTarget =
     | { kind: 'collection'; item: Collection }
     | { kind: 'folder'; item: Folder }
-    | { kind: 'request'; item: Request };
+    | { kind: 'request'; item: Request }
+    | { kind: 'example'; item: Example };
 
   let ctxMenu = $state<{ target: CtxTarget; x: number; y: number } | null>(null);
 
@@ -156,9 +159,23 @@
   async function removeReq(req: Request) {
     if (!appState.workspace) return;
     closeMenu();
+    if (!confirm(`Delete request "${req.name}"?`)) return;
     await deleteRequest(appState.workspace.id, req.collection_id, req.id);
+    const reqExamples = appState.examples.filter(e => e.request_id === req.id);
+    for (const ex of reqExamples) {
+      await deleteExample(appState.workspace.id, ex.collection_id, ex.id);
+    }
+    appState.examples = appState.examples.filter(e => e.request_id !== req.id);
     appState.requests = appState.requests.filter(r => r.id !== req.id);
     if (appState.activeRequestId === req.id) appState.activeRequestId = appState.requests[0]?.id ?? null;
+  }
+
+  async function removeExample(ex: Example) {
+    if (!appState.workspace) return;
+    closeMenu();
+    await deleteExample(appState.workspace.id, ex.collection_id, ex.id);
+    appState.examples = appState.examples.filter(e => e.id !== ex.id);
+    if (appState.activeExampleId === ex.id) appState.activeExampleId = null;
   }
 
   async function duplicateReq(req: Request) {
@@ -174,7 +191,8 @@
   type TreeRow =
     | { kind: 'collection'; item: Collection; depth: 0 }
     | { kind: 'folder'; item: Folder; depth: number }
-    | { kind: 'request'; item: Request; depth: number };
+    | { kind: 'request'; item: Request; depth: number }
+    | { kind: 'example'; item: Example; depth: number };
 
   function buildTree(): TreeRow[] {
     const rows: TreeRow[] = [];
@@ -194,6 +212,14 @@
       }
       for (const req of reqs) {
         rows.push({ kind: 'request', item: req, depth });
+        if (expandedFolders.has(req.id)) {
+          const exs = appState.examples
+            .filter(e => e.request_id === req.id)
+            .sort((a, b) => a.created_at - b.created_at);
+          for (const ex of exs) {
+            rows.push({ kind: 'example', item: ex, depth: depth + 1 });
+          }
+        }
       }
     }
 
@@ -265,18 +291,40 @@
           <button class="dots" onclick={(e) => openMenu(e, { kind: 'folder', item: folder })}>•••</button>
         </div>
 
-      {:else}
+      {:else if row.kind === 'request'}
         {@const req = row.item}
+        {@const hasExamples = appState.examples.some(e => e.request_id === req.id)}
+        {@const expanded = expandedFolders.has(req.id)}
         <div
           class="row req-row"
-          class:row-active={req.id === appState.activeRequestId}
+          class:row-active={req.id === appState.activeRequestId && !appState.activeExampleId}
           style:padding-left="{4 + indent}px"
         >
+          {#if hasExamples}
+            <button class="caret" onclick={() => toggle('folder', req.id)}>{expanded ? '▾' : '▸'}</button>
+          {:else}
+            <span class="caret-spacer"></span>
+          {/if}
           <button class="req-btn" onclick={() => { appState.activeCollectionId = req.collection_id; onselect(req.id); }}>
             <span class="method-badge" style:color={methodColor(req.method)}>{req.method}</span>
             <span class="req-name" title={req.name}>{req.name}</span>
           </button>
           <button class="dots" onclick={(e) => openMenu(e, { kind: 'request', item: req })}>•••</button>
+        </div>
+
+      {:else if row.kind === 'example'}
+        {@const ex = row.item}
+        <div
+          class="row example-row"
+          class:row-active={ex.id === appState.activeExampleId}
+          style:padding-left="{4 + indent}px"
+        >
+          <button class="example-btn" onclick={() => onselectexample(ex)}>
+            <span class="example-icon">📄</span>
+            <span class="example-status" style:color={ex.status_code >= 200 && ex.status_code < 300 ? 'var(--ok)' : ex.status_code >= 400 ? 'var(--err)' : 'var(--warn)'}>{ex.status_code}</span>
+            <span class="example-name" title={ex.name}>{ex.name}</span>
+          </button>
+          <button class="dots" onclick={(e) => openMenu(e, { kind: 'example' as any, item: ex })}>•••</button>
         </div>
       {/if}
     {/each}
@@ -306,8 +354,12 @@
         <hr />
         <button class="danger-item" onclick={() => removeFolder(folder)}>Delete Folder</button>
 
+      {:else if ctxMenu.target.kind === 'example'}
+        {@const ex = ctxMenu.target.item}
+        <button class="danger-item" onclick={() => removeExample(ex)}>Delete Example</button>
+
       {:else}
-        {@const req = ctxMenu.target.item}
+        {@const req = ctxMenu.target.item as Request}
         <button onclick={() => duplicateReq(req)}>Duplicate</button>
         <hr />
         <button class="danger-item" onclick={() => removeReq(req)}>Delete Request</button>
@@ -356,7 +408,7 @@
     position: relative;
   }
   .row:hover { background: var(--bg-3); }
-  .row-active { background: var(--bg-3); }
+  .row-active { background: var(--accent-dim); }
 
   /* Caret */
   .caret {
@@ -406,6 +458,7 @@
 
   /* Request row */
   .req-row { padding-right: 4px; }
+  .caret-spacer { width: 18px; flex-shrink: 0; }
   .req-btn {
     flex: 1; background: transparent; border: none;
     text-align: left; padding: 6px 4px 6px 0;
@@ -420,6 +473,25 @@
   .req-name {
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     font-size: 12px; color: var(--fg-1);
+  }
+
+  /* Example row */
+  .example-row { padding-right: 4px; background: var(--bg-1); }
+  .example-btn {
+    flex: 1; background: transparent; border: none;
+    text-align: left; padding: 5px 4px 5px 0;
+    display: flex; gap: 6px; align-items: center;
+    cursor: pointer; color: inherit; border-radius: 0;
+    overflow: hidden; min-width: 0;
+  }
+  .example-icon { font-size: 10px; flex-shrink: 0; opacity: 0.7; }
+  .example-status {
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    flex-shrink: 0; min-width: 28px;
+  }
+  .example-name {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: 11px; color: var(--fg-2);
   }
 
   /* Add collection button */
@@ -443,7 +515,7 @@
     background: var(--bg-2);
     border: 1px solid var(--border);
     border-radius: 7px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.6);
     min-width: 160px;
     display: flex; flex-direction: column;
     overflow: hidden;
