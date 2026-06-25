@@ -51,3 +51,4 @@ coverage/
 *.AppImage
 *.msi
 *.exe
+echo
