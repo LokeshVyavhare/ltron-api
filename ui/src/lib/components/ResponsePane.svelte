@@ -36,9 +36,9 @@
     return result;
   });
 
-  let tab = $state<'body' | 'headers'>('body');
-  let copied = $state(false);
-  let savedExample = $state(false);
+  // let tab = $state<'body' | 'headers'>('body');
+  // let copied = $state(false);
+  // let savedExample = $state(false);
 
   function statusColor(s: number): string {
     if (s >= 200 && s < 300) return 'var(--ok)';
