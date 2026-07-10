@@ -1,6 +1,7 @@
 import type {
   AppSettings,
   Collection,
+  Example,
   Folder,
   Workspace,
   Request,
@@ -13,14 +14,15 @@ import { DEFAULT_SETTINGS } from '../models';
 export const appState = $state({
   settings: { ...DEFAULT_SETTINGS } as AppSettings,
   workspace: null as Workspace | null,
-  // multi-collection
   collections: [] as Collection[],
   activeCollectionId: null as string | null,
-  folders: [] as Folder[], // all folders for the active workspace
+  folders: [] as Folder[],
   globals: null as Globals | null,
   environments: [] as Environment[],
-  requests: [] as Request[], // all requests across all collections
+  requests: [] as Request[],
+  examples: [] as Example[],
   activeRequestId: null as string | null,
+  activeExampleId: null as string | null,
   history: [] as HistoryEntry[],
   booted: false,
 });

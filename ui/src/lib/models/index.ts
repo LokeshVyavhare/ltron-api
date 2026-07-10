@@ -110,6 +110,20 @@ export interface Globals {
   variables: Variable[];
 }
 
+export interface Example {
+  schema_version: 1;
+  id: string;
+  request_id: string;
+  collection_id: string;
+  folder_id: string | null;
+  name: string;
+  status_code: number;
+  headers: KV[];
+  body: string;
+  body_is_text: boolean;
+  created_at: number;
+}
+
 export interface HistoryEntry {
   id: string;
   workspace_id: string;

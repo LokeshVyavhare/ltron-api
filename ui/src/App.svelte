@@ -12,6 +12,8 @@
     loadAllFolders,
     saveWorkspace,
     appendHistory,
+    loadHistory,
+    loadAllExamples,
     loadSettings,
     saveSettings,
   } from './lib/storage/store';
@@ -27,6 +29,7 @@
   import TopBar from './lib/components/TopBar.svelte';
   import TutorialModal from './lib/components/TutorialModal.svelte';
   import VarSuggest from './lib/components/VarSuggest.svelte';
+  import HistoryPane from './lib/components/HistoryPane.svelte';
   import { buildVariableContext, send } from './lib/sender';
   import { httpCancel } from './lib/ipc/http';
   import { exportAll, importBundle } from './lib/storage/bundle';
@@ -37,11 +40,13 @@
   let tab = $state<'params' | 'headers' | 'body' | 'auth'>('params');
   let result = $state<ExecutionResult | null>(null);
   let error = $state<string | null>(null);
+  let selectedExample = $state<import('./lib/models').Example | null>(null);
   let loading = $state(false);
   let activeExecutionId = $state<string | null>(null);
   let showEnvs = $state(false);
   let showHelp = $state(false);
   let toast = $state<string | null>(null);
+  let showHistory = $state(false);
 
   // Apply theme class on boot and when settings change
   $effect(() => {
@@ -92,8 +97,17 @@
         appState.requests = allRequests;
         appState.activeRequestId = request.id;
 
+        // Load all examples across all collections
+        const allExamples: any[] = [];
+        for (const coll of allColls) {
+          const exs = await loadAllExamples(workspace.id, coll.id);
+          allExamples.push(...exs);
+        }
+        appState.examples = allExamples;
+
         appState.settings.last_active_workspace_id = workspace.id;
         await saveSettings(appState.settings);
+        appState.history = await loadHistory(workspace.id, 100);
         appState.booted = true;
       } catch (e) {
         console.error('boot failed', e);
@@ -117,6 +131,16 @@
 
   function selectRequest(id: string) {
     appState.activeRequestId = id;
+    appState.activeExampleId = null;
+    selectedExample = null;
+    result = null;
+    error = null;
+  }
+
+  function selectExample(ex: import('./lib/models').Example) {
+    appState.activeExampleId = ex.id;
+    appState.activeRequestId = ex.request_id ?? appState.activeRequestId;
+    selectedExample = ex;
     result = null;
     error = null;
   }
@@ -168,7 +192,7 @@
       const r = await send(current, ctx);
       activeExecutionId = r.execution_id;
       result = r;
-      await appendHistory({
+      const entry: Parameters<typeof appendHistory>[0] = {
         id: newId(),
         workspace_id: appState.workspace.id,
         request_id: current.id,
@@ -179,12 +203,14 @@
         ttfb_ms: r.ttfb_ms,
         error_kind: null,
         executed_at: startedAt,
-      });
+      };
+      await appendHistory(entry);
+      appState.history = [entry, ...appState.history].slice(0, appState.settings.history_limit);
     } catch (e: any) {
       const msg = e?.message ?? (typeof e === 'string' ? e : JSON.stringify(e));
       error = msg;
       try {
-        await appendHistory({
+        const errEntry: Parameters<typeof appendHistory>[0] = {
           id: newId(),
           workspace_id: appState.workspace.id,
           request_id: current.id,
@@ -195,7 +221,9 @@
           ttfb_ms: null,
           error_kind: e?.kind ?? 'Error',
           executed_at: startedAt,
-        });
+        };
+        await appendHistory(errEntry);
+        appState.history = [errEntry, ...appState.history].slice(0, appState.settings.history_limit);
       } catch {}
     } finally {
       loading = false;
@@ -264,6 +292,17 @@
   function setName(name: string) { updateActive({ name }); }
   function setBody(mode: BodyMode, body: Body) { updateActive({ body_mode: mode, body }); }
   function setAuth(auth: Auth) { updateActive({ auth }); }
+
+  function loadRequestFromHistory(entry: import('./lib/models').HistoryEntry) {
+    if (entry.request_id) {
+      const req = appState.requests.find(r => r.id === entry.request_id);
+      if (req) { selectRequest(req.id); return; }
+    }
+    // Request no longer exists — restore method+url into current active request
+    const cur = activeRequest();
+    if (!cur) return;
+    updateActive({ method: entry.method as import('./lib/models').HttpMethod, url: entry.url });
+  }
 </script>
 
 <svelte:window onkeydown={onKey} />
@@ -274,9 +313,10 @@
     onimport={onImport}
     onenvironments={() => (showEnvs = true)}
     onhelp={() => (showHelp = true)}
+    onhistory={() => (showHistory = !showHistory)}
   />
 <div class="app">
-  <SidebarTree onselect={selectRequest} />
+  <SidebarTree onselect={selectRequest} onselectexample={selectExample} />
 
   <main>
     {#if current}
@@ -349,8 +389,13 @@
       </div>
 
       <div class="response-wrap">
-        <ResponsePane {result} {error} {loading} />
+        <ResponsePane {result} {error} {loading} activeRequest={current} example={selectedExample} />
       </div>
+      {#if showHistory}
+        <div class="history-wrap">
+          <HistoryPane entries={appState.history} onselect={loadRequestFromHistory} />
+        </div>
+      {/if}
     {:else}
       <div class="empty">Loading…</div>
     {/if}
@@ -389,7 +434,7 @@
   }
   main {
     display: grid;
-    grid-template-rows: auto auto auto auto 1fr;
+    grid-template-rows: auto auto auto auto 1fr auto;
     min-height: 0;
     overflow: hidden;
   }
@@ -439,8 +484,9 @@
     cursor: pointer;
   }
   .tabs button.active {
-    color: var(--fg-1);
+    color: var(--accent);
     border-bottom-color: var(--accent);
+    background: var(--accent-dim);
   }
   .tab-content {
     padding: 12px;
@@ -460,6 +506,12 @@
     color: var(--fg-3);
     font-size: 14px;
   }
+  .history-wrap {
+    height: 180px;
+    min-height: 0;
+    overflow: hidden;
+    border-top: 1px solid var(--border);
+  }
   .toast {
     position: fixed;
     bottom: 20px;
@@ -468,7 +520,7 @@
     border: 1px solid var(--border);
     border-radius: 6px;
     padding: 10px 14px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
     z-index: 200;
     font-size: 13px;
   }

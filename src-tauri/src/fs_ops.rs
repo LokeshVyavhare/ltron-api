@@ -3,6 +3,7 @@ use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
 use serde::Serialize;
 use std::path::Path;
 use tokio::io::AsyncWriteExt;
+use tokio::io::AsyncSeekExt;
 
 #[derive(Serialize)]
 pub struct DirEntry {
@@ -95,6 +96,28 @@ pub async fn fs_delete(path: String, recursive: bool) -> Result<(), AppError> {
 #[tauri::command]
 pub async fn fs_mkdir(path: String) -> Result<(), AppError> {
     tokio::fs::create_dir_all(&path).await?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn fs_append(path: String, line: String) -> Result<(), AppError> {
+    let p = Path::new(&path);
+    if let Some(parent) = p.parent() {
+        tokio::fs::create_dir_all(parent).await?;
+    }
+    let mut f = tokio::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(p)
+        .await?;
+    // Ensure we're at end (append flag guarantees this, but be explicit)
+    f.seek(std::io::SeekFrom::End(0)).await?;
+    let mut content = line;
+    if !content.ends_with('\n') {
+        content.push('\n');
+    }
+    f.write_all(content.as_bytes()).await?;
+    f.flush().await?;
     Ok(())
 }
 
